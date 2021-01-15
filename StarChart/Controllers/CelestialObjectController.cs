@@ -18,9 +18,7 @@ namespace StarChart.Controllers
         [HttpGet("{id:int}"), ActionName("GetById")]
         public IActionResult GetById(int id)
         {
-            var celestialObject = _context.CelestialObjects
-                .Where(o => o.Id == id)
-                .FirstOrDefault();
+            var celestialObject = _context.CelestialObjects.Find(id);
 
             if (celestialObject == null)
                 return NotFound();
@@ -38,21 +36,23 @@ namespace StarChart.Controllers
         [HttpGet("{name}")]
         public IActionResult GetByName(string name)
         {
-            var celestialObject = _context.CelestialObjects
-                .Where(o => o.Name == name)
-                .FirstOrDefault();
+            var celestialObjects = _context.CelestialObjects
+                .Where(o => o.Name == name);
 
-            if (celestialObject == null)
+            if (!celestialObjects.Any())
                 return NotFound();
 
-            var satellites = _context.CelestialObjects
-                .Where(o => o.OrbitedObjectId == o.Id)
-                .ToList();
+            foreach (var celestialObject in celestialObjects)
+            {
+                var satellites = _context.CelestialObjects
+                    .Where(o => o.OrbitedObjectId == celestialObject.Id)
+                    .ToList();
 
-            celestialObject.Satellites = satellites;
-            _context.SaveChanges();
+                celestialObject.Satellites = satellites;
+                _context.SaveChanges();
+            }
 
-            return Ok(celestialObject);
+            return Ok(celestialObjects.ToList());
         }
 
         [HttpGet]
@@ -63,7 +63,7 @@ namespace StarChart.Controllers
             foreach (var celestialObject in celestialObjects)
             {
                 var satellites = _context.CelestialObjects
-                    .Where(o => o.OrbitedObjectId == o.Id)
+                    .Where(o => o.OrbitedObjectId == celestialObject.Id)
                     .ToList();
 
                 celestialObject.Satellites = satellites;
